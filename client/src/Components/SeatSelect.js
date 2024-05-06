@@ -66,7 +66,7 @@ export default function SeatSelect() {
     time: location.state?.selectedShowtime.time,
     room: location.state?.selectedShowtime.room,
     date: location.state?.selectedShowtime.date,
-    movie: movie.id,
+    movie: movie.name,
     seats: newTicketList,
   }
 
