@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import SelectionError from './SelectionError';
-import { doc, collection, updateDoc } from "firebase/firestore"; 
+import { doc, collection, updateDoc, addDoc } from "firebase/firestore"; 
 import { db } from '../firebaseConfig';
 
 export default function SeatSelect() {
@@ -17,7 +17,7 @@ export default function SeatSelect() {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [seatList, setSeatList] = useState(location.state?.selectedShowtime.seatList.slice())
-  
+  const [newTicketList, setNewTicketList] = useState([])
 
   const toggleSeatSelection = (seatId, seatNum) => {
     const isSelected = selectedSeats.includes(seatId);
@@ -25,9 +25,12 @@ export default function SeatSelect() {
     var curr = seatList
     if(!isSelected){
       curr[seatNum] = "full"
+      newTicketList.push(seatId)
     }
     else{
       curr[seatNum] = ""
+      var index = newTicketList.indexOf(seatId)
+      newTicketList.splice(index, 1)
     }
   
   };
@@ -37,13 +40,16 @@ export default function SeatSelect() {
       setShowErrorDialog(true); // Show error dialog if no seats are selected
     } else {
       try {
-        const docRef = doc(db, 'showtime', selectedShowtime.id)
-        console.log(docRef)
-        console.log(updatedShowtime)
+        const docRef = doc(db, 'showtime', selectedShowtime.id)      
         await updateDoc(docRef, updatedShowtime)
       }catch (error) {
           console.log(error + "Error adding document");
         }
+        try {
+          await addDoc(collection(db, "ticket"), newTicket);
+        }catch (error) {
+            console.log(error + "Error adding document");
+          }
       navigate('/select-tickets', { state: { movie, selectedShowtime, selectedSeats } });
     }
   };
@@ -54,6 +60,14 @@ export default function SeatSelect() {
     date: location.state?.selectedShowtime.date,
     movieid: location.state?.selectedShowtime.movieid,
     seatList: seatList,
+  }
+
+  const newTicket = {
+    time: location.state?.selectedShowtime.time,
+    room: location.state?.selectedShowtime.room,
+    date: location.state?.selectedShowtime.date,
+    movie: movie.id,
+    seats: newTicketList,
   }
 
   return (
@@ -72,7 +86,7 @@ export default function SeatSelect() {
             {Array.from({ length: totalRows }).map((_, rowIndex) => (
               <div key={rowIndex} className="flex justify-center mb-4">
                 {Array.from({ length: totalColumns }).map((_, columnIndex) => {
-                 
+              
                   const seatId = `${String.fromCharCode(65 + rowIndex)}${columnIndex + 1}`;
                   if(selectedShowtime.seatList[columnIndex + rowIndex*12] == ""){
                     return (
