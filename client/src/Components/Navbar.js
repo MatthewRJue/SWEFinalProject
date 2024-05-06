@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 
-export default function Navbar({status, updateAdminTab, onLogout}) {
+export default function Navbar({status, updateAdminTab, onLogout, orderHistory}) {
+  
+  const navigate = useNavigate()
 
   const handleUserClick = () => {
     updateAdminTab("ManageUsers")
@@ -16,6 +18,11 @@ export default function Navbar({status, updateAdminTab, onLogout}) {
   const handlePromoClick = () => {
     updateAdminTab("ManagePromotions")
   }
+
+  const handleProfile = () => {
+    console.log(orderHistory)
+    navigate('/profile', { state: { orderHistory } });
+};
 
   return (
     <div className="lg:flex lg:items-center lg:justify-between p-10">
@@ -73,9 +80,9 @@ export default function Navbar({status, updateAdminTab, onLogout}) {
         { status==="User" &&
         <div className="mt-0 flex lg:ml-4 lg:mt-0">
         <span className="sm:ml-3">
-          <Link to="/profile" className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+          <button onClick={handleProfile} className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
             Profile
-          </Link>
+          </button>
         </span>
       </div>}
 

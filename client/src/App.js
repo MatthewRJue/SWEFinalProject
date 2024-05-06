@@ -44,6 +44,7 @@ function App() {
   const [promotions, setPromotions] = useState([]);
   const [showtimes, setShowtimes] = useState([]);
   const [noMovies, setNoMovies] = useState(false)
+  const [orderHistory, setOrderHistory] = useState([])
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -97,10 +98,24 @@ function App() {
       }
   };
 
+  const fetchOrderHistory = async () => {
+    try {
+      const orderHistoryCollection = collection(db, 'ticket');
+      const orderHistorySnapshot = await getDocs(orderHistoryCollection);
+      const orderHistoryData = orderHistorySnapshot.docs.map(doc => ({id:doc.id,...doc.data()}));
+      console.log(orderHistoryData)
+      setOrderHistory(orderHistoryData);  
+    } catch (error) {
+      console.error('Error fetching promotions: ', error);
+    }
+  };
+
     fetchShowtimes();
     fetchMovies();
     fetchAccounts();
     fetchPromotions();
+    fetchOrderHistory();
+
   }, []);
 
   const filterMovies = (currentSearchFilter, currentCategoryFilter) => {
@@ -180,7 +195,7 @@ function App() {
       <Routes>
         <Route path="/" element={
           <>
-            <Navbar status={userStatus} updateAdminTab={handleAdminTab} onLogout={handleLogout}/>
+            <Navbar status={userStatus} updateAdminTab={handleAdminTab} onLogout={handleLogout} orderHistory={orderHistory}/>
             <Searchbar setSearchFilter={handleSearchChange} setCategoryFilter={handleCategoryChange}/>
             {userStatus === "Admin" && adminTab === "ManageMovies" && <ManageMovies movieList={displayedMovies} showtimes={showtimes}/>}
             {userStatus === "Admin" && adminTab === "ManageUsers" && <ManageUsers userList={accounts} />}

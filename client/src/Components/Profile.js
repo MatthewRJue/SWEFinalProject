@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import Navbar from './Navbar';
 import { doc, getDoc, updateDoc, collection, addDoc, query, deleteDoc, getDocs } from "firebase/firestore"; 
 import { db } from '../firebaseConfig';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Profile() {
-
-  const navigate = useNavigate();
   
+  const navigate = useNavigate();
+  const location = useLocation()
+  const [ticketHistory, setticketHistory] = useState(location.state?.orderHistory)
   const [activeTab, setActiveTab] = useState('info'); // 'info', 'history', or 'billing'
   const [userInfo, setUserInfo] = useState({
     firstName: '',
@@ -28,6 +29,8 @@ export default function Profile() {
     { id: 1, item: 'Ticket A', date: '2023-01-01' },
     { id: 2, item: 'Ticket B', date: '2023-02-01' },
   ]);
+
+  console.log(ticketHistory)
 
   useEffect(() => {
     const fetchUserData = async () => {
