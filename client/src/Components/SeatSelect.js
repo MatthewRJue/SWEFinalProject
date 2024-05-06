@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import SelectionError from './SelectionError';
+import { doc, collection, updateDoc } from "firebase/firestore"; 
+import { db } from '../firebaseConfig';
 
 export default function SeatSelect() {
   const location = useLocation();
@@ -14,19 +16,45 @@ export default function SeatSelect() {
   const totalColumns = 12; // 1-12
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [seatList, setSeatList] = useState(location.state?.selectedShowtime.seatList.slice())
+  
 
-  const toggleSeatSelection = (seatId) => {
+  const toggleSeatSelection = (seatId, seatNum) => {
     const isSelected = selectedSeats.includes(seatId);
     setSelectedSeats(isSelected ? selectedSeats.filter(id => id !== seatId) : [...selectedSeats, seatId]);
+    var curr = seatList
+    if(!isSelected){
+      curr[seatNum] = "full"
+    }
+    else{
+      curr[seatNum] = ""
+    }
+  
   };
 
-  const handleNextClick = () => {
+  const handleNextClick = async () => {
     if (selectedSeats.length === 0) {
       setShowErrorDialog(true); // Show error dialog if no seats are selected
     } else {
+      try {
+        const docRef = doc(db, 'showtime', selectedShowtime.id)
+        console.log(docRef)
+        console.log(updatedShowtime)
+        await updateDoc(docRef, updatedShowtime)
+      }catch (error) {
+          console.log(error + "Error adding document");
+        }
       navigate('/select-tickets', { state: { movie, selectedShowtime, selectedSeats } });
     }
   };
+
+  const updatedShowtime = {
+    time: location.state?.selectedShowtime.time,
+    room: location.state?.selectedShowtime.room,
+    date: location.state?.selectedShowtime.date,
+    movieid: location.state?.selectedShowtime.movieid,
+    seatList: seatList,
+  }
 
   return (
     <>
@@ -44,18 +72,33 @@ export default function SeatSelect() {
             {Array.from({ length: totalRows }).map((_, rowIndex) => (
               <div key={rowIndex} className="flex justify-center mb-4">
                 {Array.from({ length: totalColumns }).map((_, columnIndex) => {
+                 
                   const seatId = `${String.fromCharCode(65 + rowIndex)}${columnIndex + 1}`;
-                  return (
-                    <button 
-                      key={seatId} 
-                      className={`w-16 h-16 bg-indigo-500 rounded-lg m-1 flex items-center justify-center ${selectedSeats.includes(seatId) ? 'bg-indigo-700' : ''}`} 
-                      onClick={() => toggleSeatSelection(seatId)}
-                    >
-                      <span className="text-lg text-white font-semibold">
-                        {seatId}
-                      </span>
-                    </button>
-                  );
+                  if(selectedShowtime.seatList[columnIndex + rowIndex*12] == ""){
+                    return (
+                      <button 
+                        key={seatId} 
+                        className={`w-16 h-16 bg-indigo-500 rounded-lg m-1 flex items-center justify-center ${selectedSeats.includes(seatId) ? 'bg-indigo-700' : ''}`} 
+                        onClick={() => toggleSeatSelection(seatId, columnIndex + rowIndex*12)}
+                      >
+                        <span className="text-lg text-white font-semibold">
+                          {seatId}
+                        </span>
+                      </button>
+                    );
+                  } 
+                  else{
+                    return (
+                      <button 
+                        key={seatId} 
+                        className={`w-16 h-16 bg-gray-500 rounded-lg m-1 flex items-center justify-center`} 
+                      >
+                        <span className="text-lg text-white font-semibold">
+                          {seatId}
+                        </span>
+                      </button>
+                    );
+                  }
                 })}
               </div>
             ))}
