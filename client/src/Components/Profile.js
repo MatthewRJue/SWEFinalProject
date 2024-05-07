@@ -352,7 +352,7 @@ export default function Profile() {
                   <li key={ticket.id} className="flex justify-between gap-x-6 py-5 bg-white shadow-lg rounded-xl p-8 space-y-8 mb-6">
                     <div className="flex min-w-0 gap-x-4">
                       <div className="min-w-0 flex-auto">
-                        <p className="text-3xl font-semibold leading-6 text-gray-900">Movie ID: {ticket.movie}</p>
+                        <p className="text-3xl font-semibold leading-6 text-gray-900">{ticket.movie}</p>
                         <p className="mt-4 truncate text-sm leading-5 text-gray-500">Date: {ticket.date}</p>
                         <p className="mt-1 truncate text-sm leading-5 text-gray-500">Room: {ticket.room}</p>
                         <p className="mt-1 truncate text-sm leading-5 text-gray-500">

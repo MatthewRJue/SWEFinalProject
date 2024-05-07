@@ -1,10 +1,11 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import { useState, Fragment } from 'react'
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import { Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { Fragment } from 'react';
 
 const Checkout = () => {
     const location = useLocation();
@@ -13,12 +14,36 @@ const Checkout = () => {
     const [showCreditCardForm, setShowCreditCardForm] = useState(true);
     const [selectedCard, setSelectedCard] = useState(null);
     const [promoCode, setPromoCode] = useState('');
+    const [savedCards, setSavedCards] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Sample saved cards
-    const savedCards = [
-        { id: 1, type: 'Mastercard', last4: '1234' },
-        { id: 2, type: 'VISA', last4: '5678' }
-    ];
+    const db = getFirestore();
+    const auth = getAuth();
+
+    useEffect(() => {
+        const fetchSavedCards = async () => {
+            if (!auth.currentUser) {
+                setError('No user logged in');
+                setIsLoading(false);
+                return;
+            }
+            const userUid = auth.currentUser.uid;
+            const cardsRef = collection(db, 'accounts', userUid, 'paymentCard');
+            try {
+                const q = query(cardsRef);
+                const querySnapshot = await getDocs(q);
+                const cards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setSavedCards(cards);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchSavedCards();
+    }, []); // Dependency array is empty, so this effect runs once on mount
 
     // Sales tax rate
     const salesTaxRate = 0.06; // 6%
@@ -51,7 +76,7 @@ const Checkout = () => {
                             <>
                                 <div className="relative mt-1">
                                     <Listbox.Button className="relative w-7/12 py-2 pl-3 pr-10 text-left bg-white rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        <span className="block truncate">{selectedCard ? `${selectedCard.type} ending in ${selectedCard.last4}` : 'Select a card'}</span>
+                                        <span className="block truncate">{selectedCard ? `${selectedCard.cardType}  ending in ${selectedCard.cardNumber.slice(-4)}` : 'Select a card'}</span>
                                         <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                                             <ChevronUpDownIcon className="w-5 h-5 text-gray-400" aria-hidden="true" />
                                         </span>
@@ -75,7 +100,7 @@ const Checkout = () => {
                                                     {({ selected, active }) => (
                                                         <>
                                                             <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                                                                {card.type} ending in {card.last4}
+                                                                {card.cardType} ending in {card.cardNumber.slice(-4)}
                                                             </span>
                                                             {selected ? (
                                                                 <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-indigo-600' : 'text-indigo-600'}`}>
