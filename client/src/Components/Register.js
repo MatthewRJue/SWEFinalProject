@@ -32,29 +32,27 @@ export default function Register() {
   const [promotions, setPromotions] = useState(false)
 
   const navigate = useNavigate();
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
+    if (password !== confirmPassword) {
+      alert("Passwords do not match.");
+      return;
+    }
   
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      sendEmailVerification(user);
-      
-      // Get the UID of the authenticated user
-      const uid = user.uid;
+      await sendEmailVerification(user);
   
+      const uid = user.uid;
       if (!showBillingAddress) {
         setBillCity(city);
         setBillCountry(country);
         setBillState(state);
         setBillStreet(street);
         setBillZip(zip);
-      }
-  
-      if (password !== confirmPassword) {
-        alert("Passwords do not match.");
-        return;
       }
   
       const newUser = {
@@ -67,29 +65,35 @@ export default function Register() {
         state,
         country,
         zip,
+        promotions,
+        status: "User",
         billStreet,
-        billCity,
-        billState,
-        billCountry,
-        billZip,
+        billCity: billCity || city, // Assuming billCity falls back to city if not provided
+        billState: billState || state, // Assuming billState falls back to state if not provided
+        billCountry: billCountry || country, // Assuming billCountry falls back to country if not provided
+        billZip: billZip || zip // Use billZip, fallback to zip if not provided
+      };
+  
+      await setDoc(doc(db, "accounts", uid), newUser);
+  
+      // Store card information
+      const cardData = {
         cardName,
         cardNumber,
         cardType,
-        expDate,
         cvv,
-        promotions,
-        status: "User",
+        expDate,
       };
   
-      // Add user document to Firestore with UID as document ID
-      await setDoc(doc(db, "accounts", uid), newUser);
+      await setDoc(doc(db, `accounts/${uid}/paymentCard/cardInfo`), cardData);
+  
       alert("User registered successfully!");
       navigate('/registration-confirmation', { state: { email } });
     } catch (error) {
       console.error("Error registering user: ", error);
       alert("Failed to register user.");
     }
-  };  
+  }; 
 
   const getPasswordInputClassName = () => {
     if (!confirmPassword) return "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6";
