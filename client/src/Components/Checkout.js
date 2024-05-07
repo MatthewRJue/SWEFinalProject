@@ -9,7 +9,7 @@ import { Fragment } from 'react';
 
 const Checkout = () => {
     const location = useLocation();
-    const { movie, selectedShowtime, ticketCounts, ticketPrices, totalPrice } = location.state || {};
+    const { movie, selectedShowtime, ticketCounts, ticketPrices } = location.state || {};
     const navigate = useNavigate();
     const [showCreditCardForm, setShowCreditCardForm] = useState(true);
     const [selectedCard, setSelectedCard] = useState(null);
@@ -17,6 +17,7 @@ const Checkout = () => {
     const [savedCards, setSavedCards] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [totalPrice, setTotalPrice] = useState(location.state.totalPrice);
 
     const db = getFirestore();
     const auth = getAuth();
@@ -76,7 +77,7 @@ const Checkout = () => {
                             <>
                                 <div className="relative mt-1">
                                     <Listbox.Button className="relative w-7/12 py-2 pl-3 pr-10 text-left bg-white rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        <span className="block truncate">{selectedCard ? `${selectedCard.cardType}  ending in ${selectedCard.cardNumber.slice(-4)}` : 'Select a card'}</span>
+                                        <span className="block truncate">{selectedCard ? `${selectedCard.cardType} ending in ${selectedCard.cardNumber.slice(-4)}` : 'Select a card'}</span>
                                         <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                                             <ChevronUpDownIcon className="w-5 h-5 text-gray-400" aria-hidden="true" />
                                         </span>
@@ -164,6 +165,36 @@ const Checkout = () => {
         }
     };
 
+    const handlePromotionCode = async () => {
+        if (!promoCode) {
+            alert("Please enter a promotion code.");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const promotionsRef = collection(db, 'promotions');
+            const q = query(promotionsRef, where("ein", "==", promoCode.trim()));
+            const querySnapshot = await getDocs(q);
+            if (querySnapshot.empty) {
+                alert("Invalid promotion code.");
+                setIsLoading(false);
+                return;
+            }
+
+            querySnapshot.forEach((doc) => {
+                const { percent } = doc.data();
+                const discountAmount = totalPrice * (percent / 100);
+                const newTotalPrice = totalPrice - discountAmount;
+                setTotalPrice(newTotalPrice);
+            });
+        } catch (error) {
+            console.error("Error fetching promotion:", error);
+            setError(error.message);
+        }
+        setIsLoading(false);
+    };
+
     return (
         <>
             <Navbar />
@@ -202,7 +233,7 @@ const Checkout = () => {
                                     className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 />
                                 <button
-                                    onClick={() => {/* Handle promotion code confirmation here */}}
+                                    onClick={handlePromotionCode}
                                     className="px-6 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-500"
                                 >
                                     Confirm
