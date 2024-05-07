@@ -51,6 +51,16 @@ export default function Profile() {
         const querySnapshot = await getDocs(q);
         const userCards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setCreditCards(userCards);
+
+        // Fetch user's orders
+          const fetchTickets = async () => {
+            const ticketsRef = collection(db, "ticket");
+            const querySnapshot = await getDocs(ticketsRef);
+            const tickets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setOrderHistory(tickets);
+          };
+
+          fetchTickets();
       }
     };
 
@@ -336,18 +346,19 @@ export default function Profile() {
           )}
           {activeTab === 'history' && (
             <div className="border-b border-gray-900/10 pb-12">
-              <h2 className="text-base font-semibold leading-7 text-gray-900">Order History</h2>
+              <h2 className="text-base font-semibold leading-7 text-gray-900">Ticket History</h2>
               <ul className="divide-y divide-gray-100 p-20">
-                {orderHistory.map((order) => (
-                  <li key={order.id} className="flex justify-between gap-x-6 py-5 bg-white shadow-lg rounded-xl p-8 space-y-8 mb-6">
+                {orderHistory.map((ticket) => (
+                  <li key={ticket.id} className="flex justify-between gap-x-6 py-5 bg-white shadow-lg rounded-xl p-8 space-y-8 mb-6">
                     <div className="flex min-w-0 gap-x-4">
                       <div className="min-w-0 flex-auto">
-                        <p className="text-3xl font-semibold leading-6 text-gray-900">{order.item}</p>
-                        <p className="mt-4 truncate text-sm leading-5 text-gray-500">Order Date: {order.date}</p>
+                        <p className="text-3xl font-semibold leading-6 text-gray-900">Movie ID: {ticket.movie}</p>
+                        <p className="mt-4 truncate text-sm leading-5 text-gray-500">Date: {ticket.date}</p>
+                        <p className="mt-1 truncate text-sm leading-5 text-gray-500">Room: {ticket.room}</p>
+                        <p className="mt-1 truncate text-sm leading-5 text-gray-500">
+                          Seats: {Array.isArray(ticket.seats) ? ticket.seats.join(', ') : ticket.seats}
+                        </p>
                       </div>
-                    </div>
-                    <div className="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
-                      <p className="text-sm leading-6 text-gray-900">Order ID: {order.id}</p>
                     </div>
                   </li>
                 ))}
